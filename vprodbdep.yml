@@ -17,6 +17,8 @@ spec:
       containers:
         - name: vprodb
           image: shoaibzubair/vprofiledb:latest
+          securityContext:
+            runAsUser: 999
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: vpro-db-data
@@ -38,9 +40,11 @@ spec:
             fsType: ext4
 
       initContainers:
-        - name: busybox
-          image: busybox:latest
-          args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
-          volumeMounts:
-            - name: vpro-db-data
-              mountPath: /var/lib/mysql
+        # Wait for DB
+        - name: init-mydb
+          image: busybox
+          command: ['sh', '-c', 'until nslookup vprodb.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+        # Wait for Memcached
+        - name: init-memcached
+          image: busybox
+          command: ['sh', '-c', 'until nslookup vprocache01.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for memcached; sleep 2; done;']
