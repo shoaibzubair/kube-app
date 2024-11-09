@@ -14,6 +14,8 @@ spec:
       labels:
         app: vprodb
     spec:
+      securityContext:
+        fsGroup: 999  # fsGroup at the pod level, under spec.securityContext
       containers:
         - name: vprodb
           image: shoaibzubair/vprofiledb:latest
@@ -36,15 +38,5 @@ spec:
       volumes:
         - name: vpro-db-data
           awsElasticBlockStore:
-            volumeID: vol-0dfc19bfc51699edf
+            volumeID: vol-0af91f0e1bd10b6c8
             fsType: ext4
-
-      initContainers:
-        # Wait for DB
-        - name: init-mydb
-          image: busybox
-          command: ['sh', '-c', 'until nslookup vprodb.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
-        # Wait for Memcached
-        - name: init-memcached
-          image: busybox
-          command: ['sh', '-c', 'until nslookup vprocache01.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for memcached; sleep 2; done;']
